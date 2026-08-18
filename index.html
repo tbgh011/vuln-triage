@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VulnTriage — AI Security Copilot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111418;
+    --surface2: #181c22;
+    --border: #242830;
+    --border2: #2e3440;
+    --text: #e8eaf0;
+    --muted: #7a8090;
+    --accent: #00e5a0;
+    --accent-dim: rgba(0,229,160,0.12);
+    --accent-dim2: rgba(0,229,160,0.06);
+    --red: #ff4d6a;
+    --red-dim: rgba(255,77,106,0.12);
+    --amber: #ffb347;
+    --amber-dim: rgba(255,179,71,0.12);
+    --blue: #5b8fff;
+    --blue-dim: rgba(91,143,255,0.12);
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-block {}
+  .logo-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .logo-title {
+    font-family: var(--sans);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .logo-title span { color: var(--accent); }
+  .logo-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent-dim2);
+    border: 1px solid rgba(0,229,160,0.2);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .status-pill::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Mode tabs */
+  .mode-tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+    margin-bottom: 1.5rem;
+    width: fit-content;
+  }
+  .mode-tab {
+    padding: 8px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    border: none;
+    background: none;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+  }
+  .mode-tab.active {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border2);
+  }
+  .mode-tab:hover:not(.active) { color: var(--text); }
+
+  /* Input panels */
+  .input-panel { display: none; }
+  .input-panel.active { display: block; }
+
+  .field-label {
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .field-hint {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  textarea, input[type="text"] {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 12px 14px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s;
+    line-height: 1.6;
+  }
+  textarea:focus, input[type="text"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim2);
+  }
+  textarea { min-height: 140px; }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .field-group { margin-bottom: 12px; }
+
+  select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 10px 14px;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a8090' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+  }
+  select:focus { border-color: var(--accent); }
+
+  /* CVE panel specific */
+  .cve-id-row { display: flex; gap: 10px; align-items: flex-start; }
+  .cve-id-row input { flex: 1; }
+  .lookup-btn {
+    background: var(--accent-dim);
+    border: 1px solid rgba(0,229,160,0.3);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+  }
+  .lookup-btn:hover { background: rgba(0,229,160,0.2); }
+
+  /* Analyze button */
+  .analyze-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #0a0c0f;
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    margin-top: 1rem;
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .analyze-btn:hover { background: #00ffc0; transform: translateY(-1px); }
+  .analyze-btn:active { transform: translateY(0); }
+  .analyze-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .analyze-btn .spinner {
+    display: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Results */
+  #results { margin-top: 2rem; }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .result-title {
+    font-family: var(--sans);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .result-timestamp {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* Score card */
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+  .score-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    text-align: center;
+  }
+  .score-card .sc-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .score-card .sc-value {
+    font-family: var(--sans);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .score-card .sc-sub {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .sev-critical .sc-value { color: var(--red); }
+  .sev-high .sc-value { color: var(--amber); }
+  .sev-medium .sc-value { color: var(--blue); }
+  .sev-low .sc-value { color: var(--accent); }
+  .sev-info .sc-value { color: var(--muted); }
+
+  /* Sections */
+  .result-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 10px;
+  }
+  .rs-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .rs-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .rs-title {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .rs-body {
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+  .rs-body code {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 12px;
+    color: var(--accent);
+  }
+
+  /* Priority badge */
+  .priority-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+  .priority-badge::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+  .p-critical { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,77,106,0.3); }
+  .p-critical::before { background: var(--red); }
+  .p-high { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,179,71,0.3); }
+  .p-high::before { background: var(--amber); }
+  .p-medium { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(91,143,255,0.3); }
+  .p-medium::before { background: var(--blue); }
+  .p-low { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(0,229,160,0.3); }
+  .p-low::before { background: var(--accent); }
+
+  /* Icon colors */
+  .icon-red { background: var(--red-dim); color: var(--red); }
+  .icon-amber { background: var(--amber-dim); color: var(--amber); }
+  .icon-blue { background: var(--blue-dim); color: var(--blue); }
+  .icon-green { background: var(--accent-dim); color: var(--accent); }
+  .icon-muted { background: var(--border); color: var(--muted); }
+
+  /* Remediation steps */
+  .steps-list {
+    list-style: none;
+    counter-reset: step;
+  }
+  .steps-list li {
+    counter-increment: step;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .steps-list li:last-child { border-bottom: none; }
+  .steps-list li::before {
+    content: counter(step);
+    min-width: 22px;
+    height: 22px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* Error */
+  .error-box {
+    background: var(--red-dim);
+    border: 1px solid rgba(255,77,106,0.3);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--red);
+    font-size: 13px;
+  }
+
+  /* Footer */
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .score-grid { grid-template-columns: repeat(2, 1fr); }
+    .field-row { grid-template-columns: 1fr; }
+    header { flex-direction: column; gap: 1rem; }
+    .logo-title { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div style="background:var(--accent-dim);border:1px solid rgba(0,229,160,0.35);border-radius:8px;padding:10px 16px;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+    <span style="font-size:13px;color:var(--accent);"><strong>&#9888; IMPORTANT:</strong> Read the <a href="quickstart.html" style="color:var(--accent);text-decoration:underline;font-weight:500;">Quickstart Guide</a> first before using this app.</span>
+    <a href="quickstart.html" style="font-size:12px;color:var(--accent);text-decoration:none;white-space:nowrap;border:1px solid rgba(0,229,160,0.4);border-radius:6px;padding:5px 12px;background:var(--accent-dim2);">Read guide &rarr;</a>
+  </div>
+
+  <header>
+    <div class="logo-block">
+      <div class="logo-eyebrow">&#9632; Contrast Security — Hackathon 2025</div>
+      <div class="logo-title">Vuln<span>Triage</span></div>
+      <div class="logo-sub">AI-powered vulnerability & CVE triage lookup</div>
+    </div>
+    <div class="status-pill">AI Ready</div>
+  </header>
+
+  <!-- Mode tabs -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="switchMode('cve')">CVE Lookup</button>
+    <button class="mode-tab" onclick="switchMode('finding')">Contrast Finding</button>
+    <button class="mode-tab" onclick="switchMode('freeform')">Freeform</button>
+  </div>
+
+  <!-- CVE Mode -->
+  <div class="input-panel active" id="panel-cve">
+    <div class="field-group">
+      <div class="field-label">CVE Identifier</div>
+      <div class="field-hint">Enter a CVE ID and we'll fetch the description — or paste it manually below.</div>
+      <div class="cve-id-row">
+        <input type="text" id="cve-id-input" placeholder="CVE-2024-XXXXX" />
+        <button class="lookup-btn" onclick="lookupCVE()">&#8599; Fetch CVE</button>
+      </div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">CVE Description / Advisory Text</div>
+      <textarea id="cve-desc" placeholder="Paste the CVE description, NVD advisory, or vendor bulletin here..."></textarea>
+    </div>
+    <div class="field-row">
+      <div class="field-group">
+        <div class="field-label">Your Tech Stack</div>
+        <input type="text" id="cve-stack" placeholder="e.g. Java Spring Boot, Node.js, AWS Lambda" />
+      </div>
+      <div class="field-group">
+        <div class="field-label">Exposure</div>
+        <select id="cve-exposure">
+          <option value="internet-facing">Internet-facing service</option>
+          <option value="internal">Internal / intranet only</option>
+          <option value="dev-only">Dev / staging only</option>
+          <option value="unknown">Unknown</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contrast Finding Mode -->
+  <div class="input-panel" id="panel-finding">
+    <div class="field-group">
+      <div class="field-label">Contrast Finding / Alert</div>
+      <div class="field-hint">Paste the finding details from the Contrast dashboard — name, rule, route, evidence, etc.</div>
+      <textarea id="finding-text" placeholder="e.g.&#10;Rule: SQL Injection&#10;Severity: Critical&#10;Route: POST /api/users/search&#10;Evidence: Tainted value from HTTP param 'query' reaches JDBC sink&#10;Stack trace: UserService.java:142..." style="min-height: 160px;"></textarea>
+    </div>
+    <div class="field-row">
+      <div class="field-group">
+        <div class="field-label">Application Name</div>
+        <input type="text" id="finding-app" placeholder="e.g. payments-api" />
+      </div>
+      <div class="field-group">
+        <div class="field-label">Environment</div>
+        <select id="finding-env">
+          <option value="production">Production</option>
+          <option value="staging">Staging</option>
+          <option value="development">Development</option>
+          <option value="qa">QA / Test</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Additional Context (optional)</div>
+      <textarea id="finding-context" placeholder="Authentication requirements, data sensitivity, business criticality, recent changes..." style="min-height: 80px;"></textarea>
+    </div>
+  </div>
+
+  <!-- Freeform Mode -->
+  <div class="input-panel" id="panel-freeform">
+    <div class="field-group">
+      <div class="field-label">Security Issue Description</div>
+      <div class="field-hint">Describe any vulnerability, incident, or security concern in plain language.</div>
+      <textarea id="freeform-text" placeholder="e.g. Our pen test found that the /admin endpoint accepts unsanitized file paths and an attacker could potentially read arbitrary files from the server. The endpoint is authenticated but accessible to all logged-in users..." style="min-height: 200px;"></textarea>
+    </div>
+  </div>
+
+  <!-- API Key -->
+  <div class="field-group" style="margin-top: 1rem; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;">
+    <div class="field-label">Google Gemini API Key</div>
+    <div class="field-hint">Free at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent);text-decoration:none;">aistudio.google.com/apikey</a> — no credit card required. Never stored or sent to any server.</div>
+    <input type="password" id="api-key" placeholder="AIzaSy..." />
+  </div>
+
+  <button class="analyze-btn" id="analyze-btn" onclick="analyze()">
+    <span class="spinner" id="spinner"></span>
+    <span id="btn-text">&#9650; Analyze Vulnerability</span>
+  </button>
+
+  <div id="results"></div>
+
+  <footer>
+    <span>VulnTriage &mdash; AI Security Copilot &mdash; Built for Contrast Security Hackathon</span>
+    <a href="quickstart.html" style="color: var(--accent); text-decoration: none; font-size: 11px;">Quickstart Guide &rarr;</a>
+  </footer>
+
+</div>
+
+<script>
+  let currentMode = 'cve';
+
+  function switchMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.mode-tab').forEach((t, i) => {
+      t.classList.toggle('active', ['cve','finding','freeform'][i] === mode);
+    });
+    document.querySelectorAll('.input-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + mode).classList.add('active');
+    document.getElementById('results').innerHTML = '';
+  }
+
+  async function lookupCVE() {
+    const cveId = document.getElementById('cve-id-input').value.trim();
+    if (!cveId.match(/CVE-\d{4}-\d+/i)) {
+      alert('Please enter a valid CVE ID (e.g. CVE-2024-12345)');
+      return;
+    }
+    const apiKey = document.getElementById('api-key').value.trim();
+    if (!apiKey) { alert('Please enter your Gemini API key first.'); return; }
+
+    const btn = document.querySelector('.lookup-btn');
+    btn.textContent = 'Fetching...';
+    btn.disabled = true;
+
+    try {
+      const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: 'You are a CVE lookup assistant. When given a CVE ID, return only a concise 3-5 sentence plain-English description of what the vulnerability is, what software is affected, and what an attacker can do with it. No JSON, no markdown, just clean prose.' }] },
+          contents: [{ role: 'user', parts: [{ text: 'Describe ' + cveId }] }],
+          generationConfig: { maxOutputTokens: 600 }
+        })
+      });
+      const data = await resp.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      document.getElementById('cve-desc').value = text;
+    } catch(e) {
+      alert('CVE lookup failed: ' + e.message);
+    }
+    btn.textContent = '↗ Fetch CVE';
+    btn.disabled = false;
+  }
+
+  function buildPrompt() {
+    if (currentMode === 'cve') {
+      const id = document.getElementById('cve-id-input').value.trim();
+      const desc = document.getElementById('cve-desc').value.trim();
+      const stack = document.getElementById('cve-stack').value.trim();
+      const exposure = document.getElementById('cve-exposure').value;
+      return `CVE ID: ${id || 'Not provided'}\n\nVulnerability description:\n${desc}\n\nTech stack: ${stack || 'Not specified'}\nService exposure: ${exposure}`;
+    } else if (currentMode === 'finding') {
+      const finding = document.getElementById('finding-text').value.trim();
+      const app = document.getElementById('finding-app').value.trim();
+      const env = document.getElementById('finding-env').value;
+      const ctx = document.getElementById('finding-context').value.trim();
+      return `Contrast Security Finding:\n${finding}\n\nApplication: ${app || 'Not specified'}\nEnvironment: ${env}\n${ctx ? 'Additional context:\n' + ctx : ''}`;
+    } else {
+      return document.getElementById('freeform-text').value.trim();
+    }
+  }
+
+  function setLoading(loading) {
+    const btn = document.getElementById('analyze-btn');
+    const spinner = document.getElementById('spinner');
+    const btnText = document.getElementById('btn-text');
+    btn.disabled = loading;
+    spinner.style.display = loading ? 'block' : 'none';
+    btnText.textContent = loading ? 'Analyzing...' : '▲ Analyze Vulnerability';
+  }
+
+  function renderResults(json) {
+    const sev = (json.severity || 'MEDIUM').toUpperCase();
+    const priority = (json.priority || 'medium').toLowerCase();
+    const sevClass = { 'CRITICAL': 'sev-critical', 'HIGH': 'sev-high', 'MEDIUM': 'sev-medium', 'LOW': 'sev-low', 'INFO': 'sev-info' }[sev] || 'sev-medium';
+    const pClass = { 'critical': 'p-critical', 'high': 'p-high', 'medium': 'p-medium', 'low': 'p-low' }[priority] || 'p-medium';
+
+    const stepsHtml = (json.remediation_steps || []).map(s => `<li>${escHtml(s)}</li>`).join('');
+    const now = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    return `
+    <div class="result-header">
+      <div class="result-title">Triage Report</div>
+      <div class="result-timestamp">${now}</div>
+    </div>
+
+    <div class="priority-badge ${pClass}">Priority: ${priority.toUpperCase()}</div>
+
+    <div class="score-grid">
+      <div class="score-card ${sevClass}">
+        <div class="sc-label">Severity</div>
+        <div class="sc-value">${escHtml(sev)}</div>
+        <div class="sc-sub">${escHtml(json.cvss_estimate || '—')}</div>
+      </div>
+      <div class="score-card">
+        <div class="sc-label">Exploitability</div>
+        <div class="sc-value" style="color:var(--text)">${escHtml(json.exploitability || '—')}</div>
+        <div class="sc-sub">likelihood</div>
+      </div>
+      <div class="score-card">
+        <div class="sc-label">Impact</div>
+        <div class="sc-value" style="color:var(--text)">${escHtml(json.impact || '—')}</div>
+        <div class="sc-sub">blast radius</div>
+      </div>
+      <div class="score-card">
+        <div class="sc-label">Fix Time</div>
+        <div class="sc-value" style="color:var(--text)">${escHtml(json.fix_time_estimate || '—')}</div>
+        <div class="sc-sub">estimated</div>
+      </div>
+    </div>
+
+    <div class="result-section">
+      <div class="rs-head">
+        <div class="rs-icon icon-red">!</div>
+        <div class="rs-title">What this is</div>
+      </div>
+      <div class="rs-body">${escHtml(json.plain_english_summary || '')}</div>
+    </div>
+
+    <div class="result-section">
+      <div class="rs-head">
+        <div class="rs-icon icon-amber">&#9651;</div>
+        <div class="rs-title">Attack scenario</div>
+      </div>
+      <div class="rs-body">${escHtml(json.attack_scenario || '')}</div>
+    </div>
+
+    <div class="result-section">
+      <div class="rs-head">
+        <div class="rs-icon icon-blue">i</div>
+        <div class="rs-title">Context assessment</div>
+      </div>
+      <div class="rs-body">${escHtml(json.context_assessment || '')}</div>
+    </div>
+
+    <div class="result-section">
+      <div class="rs-head">
+        <div class="rs-icon icon-green">&#10003;</div>
+        <div class="rs-title">Remediation steps</div>
+      </div>
+      <ol class="steps-list">${stepsHtml}</ol>
+    </div>
+
+    ${json.contrast_relevance ? `
+    <div class="result-section">
+      <div class="rs-head">
+        <div class="rs-icon icon-muted">C</div>
+        <div class="rs-title">Contrast detection notes</div>
+      </div>
+      <div class="rs-body">${escHtml(json.contrast_relevance)}</div>
+    </div>` : ''}
+
+    ${json.references && json.references.length ? `
+    <div class="result-section">
+      <div class="rs-head">
+        <div class="rs-icon icon-muted">&rarr;</div>
+        <div class="rs-title">References</div>
+      </div>
+      <div class="rs-body">${json.references.map(r => escHtml(r)).join('\n')}</div>
+    </div>` : ''}
+    `;
+  }
+
+  function escHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function analyze() {
+    const apiKey = document.getElementById('api-key').value.trim();
+    if (!apiKey) { alert('Please enter your Gemini API key.'); return; }
+
+    const prompt = buildPrompt();
+    if (!prompt.trim()) { alert('Please fill in the vulnerability details.'); return; }
+
+    setLoading(true);
+    document.getElementById('results').innerHTML = '';
+
+    const systemPrompt = `You are VulnTriage, an expert application security analyst working at Contrast Security. You specialize in triage of CVEs and runtime security findings.
+
+Given a vulnerability description, Contrast Security finding, or security issue, respond ONLY with a JSON object (no markdown fences, no preamble) with these exact fields:
+
+{
+  "severity": "CRITICAL|HIGH|MEDIUM|LOW|INFO",
+  "priority": "critical|high|medium|low",
+  "cvss_estimate": "e.g. 9.8 / CVSS:3.1",
+  "exploitability": "High|Medium|Low|Very Low",
+  "impact": "High|Medium|Low",
+  "fix_time_estimate": "e.g. 1-2 days",
+  "plain_english_summary": "2-3 sentence plain English explanation of what this vulnerability is and why it matters. Avoid jargon.",
+  "attack_scenario": "A realistic, concrete 2-3 sentence scenario describing how an attacker would actually exploit this in practice.",
+  "context_assessment": "2-3 sentences assessing the risk given the specific context provided (tech stack, exposure, environment). Be specific and actionable.",
+  "remediation_steps": ["Step 1 as a clear action", "Step 2", "Step 3", "Step 4 (up to 6 steps max)"],
+  "contrast_relevance": "1-2 sentences on how Contrast Security IAST/ADR/SCA would detect or protect against this type of vulnerability.",
+  "references": ["NVD link or advisory URL if applicable"]
+}
+
+Be direct, practical, and opinionated. Prioritize actionability over comprehensiveness.`;
+
+    try {
+      const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 4000 }
+        })
+      });
+
+      const data = await resp.json();
+
+      if (data.error) {
+        document.getElementById('results').innerHTML = `<div class="error-box">API Error: ${escHtml(data.error.message)}</div>`;
+        setLoading(false);
+        return;
+      }
+
+      let text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      text = text.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+      const json = JSON.parse(text);
+      document.getElementById('results').innerHTML = renderResults(json);
+
+    } catch(e) {
+      document.getElementById('results').innerHTML = `<div class="error-box">Error: ${escHtml(e.message)}. Check your API key and try again.</div>`;
+    }
+
+    setLoading(false);
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+</script>
+</body>
+</html>

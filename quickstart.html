@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VulnTriage — Quickstart Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111418;
+    --surface2: #181c22;
+    --border: #242830;
+    --border2: #2e3440;
+    --text: #e8eaf0;
+    --muted: #7a8090;
+    --accent: #00e5a0;
+    --accent-dim: rgba(0,229,160,0.12);
+    --accent-dim2: rgba(0,229,160,0.06);
+    --red: #ff4d6a;
+    --red-dim: rgba(255,77,106,0.12);
+    --amber: #ffb347;
+    --amber-dim: rgba(255,179,71,0.12);
+    --blue: #5b8fff;
+    --blue-dim: rgba(91,143,255,0.12);
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-eyebrow {
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .logo-title {
+    font-family: var(--sans);
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .logo-title span { color: var(--accent); }
+  .logo-sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .back-link {
+    font-size: 12px;
+    color: var(--accent);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: 1px solid rgba(0,229,160,0.25);
+    border-radius: 6px;
+    background: var(--accent-dim2);
+    transition: all 0.15s;
+    white-space: nowrap;
+    align-self: flex-start;
+    margin-top: 4px;
+  }
+  .back-link:hover { background: var(--accent-dim); }
+
+  /* Step sections */
+  .step {
+    display: flex;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+    align-items: flex-start;
+  }
+  .step-num {
+    min-width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    border: 1px solid rgba(0,229,160,0.3);
+    color: var(--accent);
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step-body {}
+  .step-title {
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .step-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  .step-desc a { color: var(--accent); text-decoration: none; }
+  .step-desc a:hover { text-decoration: underline; }
+
+  /* Code snippet */
+  .code-block {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--accent);
+    margin-top: 10px;
+    word-break: break-all;
+    line-height: 1.6;
+  }
+
+  /* Mode cards */
+  .mode-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 1rem 0;
+  }
+  .mode-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .mode-card .mc-label {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .mode-card .mc-desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* Output legend */
+  .legend {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 1rem 0;
+  }
+  .legend-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .legend-row:last-child { border-bottom: none; }
+  .legend-icon {
+    min-width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .icon-red { background: var(--red-dim); color: var(--red); }
+  .icon-amber { background: var(--amber-dim); color: var(--amber); }
+  .icon-blue { background: var(--blue-dim); color: var(--blue); }
+  .icon-green { background: var(--accent-dim); color: var(--accent); }
+  .icon-muted { background: var(--border); color: var(--muted); }
+  .legend-label { font-weight: 500; color: var(--text); min-width: 120px; flex-shrink: 0; }
+  .legend-detail { color: var(--muted); font-size: 12px; }
+
+  /* Note box */
+  .note {
+    background: var(--accent-dim2);
+    border: 1px solid rgba(0,229,160,0.18);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--muted);
+    margin: 1rem 0;
+  }
+  .note strong { color: var(--accent); }
+
+  /* Section heading */
+  .section-heading {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 2rem 0 1rem;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* CTA */
+  .cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2.5rem;
+  }
+  .cta a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 32px;
+    background: var(--accent);
+    color: #0a0c0f;
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 8px;
+    text-decoration: none;
+    letter-spacing: 0.02em;
+    transition: all 0.15s;
+  }
+  .cta a:hover { background: #00ffc0; transform: translateY(-1px); }
+
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  @media (max-width: 560px) {
+    .mode-grid { grid-template-columns: 1fr; }
+    header { flex-direction: column; gap: 1rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="logo-eyebrow">&#9632; Contrast Security — Hackathon 2026</div>
+      <div class="logo-title">Vuln<span>Triage</span></div>
+      <div class="logo-sub">Quickstart Guide</div>
+    </div>
+    <a class="back-link" href="index.html">&#8592; Back to app</a>
+  </header>
+
+  <div class="section-heading">What is VulnTriage?</div>
+
+  <p style="font-size: 13.5px; color: var(--muted); line-height: 1.8; margin-bottom: 1rem;">
+    VulnTriage is an AI-powered vulnerability and CVE triage lookup tool built for security and development teams. Instead of wading through dense NVD advisories or raw Contrast Security findings, you paste in a vulnerability and get back a structured, plain-English triage report in seconds.
+  </p>
+  <p style="font-size: 13.5px; color: var(--muted); line-height: 1.8; margin-bottom: 1rem;">
+    It tells you what the vulnerability actually is, how an attacker would exploit it in practice, how risky it is given your specific stack and environment, and what to do about it — in priority order. It also notes how Contrast Security's IAST, ADR, and SCA tooling would detect or block that class of vulnerability.
+  </p>
+  <p style="font-size: 13.5px; color: var(--muted); line-height: 1.8; margin-bottom: 0;">
+    It runs entirely in the browser — no backend, no accounts, no data stored. Just your browser, your API key, and Gemini.
+  </p>
+
+  <div class="section-heading" style="margin-top: 2rem;">Getting started</div>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">Get a free Google Gemini API key</div>
+      <div class="step-desc">
+        VulnTriage is powered by Google Gemini. You'll need a free API key — no credit card required.<br><br>
+        Go to <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>, sign in with your Google account, and click <strong>Create API key</strong>. It's instant and completely free.
+        <div class="code-block">AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Enter your key in the app</div>
+      <div class="step-desc">
+        Paste your API key into the <strong>Google Gemini API Key</strong> field at the bottom of the form. Your key is used directly in the browser and is never sent to any third-party server — it goes straight from your browser to Google's API.
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">Pick an input mode</div>
+      <div class="step-desc">Choose the tab that matches your input:</div>
+      <div class="mode-grid">
+        <div class="mode-card">
+          <div class="mc-label">CVE Lookup</div>
+          <div class="mc-desc">Enter a CVE ID and hit "Fetch CVE" to auto-populate the description, or paste advisory text manually.</div>
+        </div>
+        <div class="mode-card">
+          <div class="mc-label">Contrast Finding</div>
+          <div class="mc-desc">Paste a finding directly from the Contrast dashboard — rule name, route, evidence, stack trace.</div>
+        </div>
+        <div class="mode-card">
+          <div class="mc-label">Freeform</div>
+          <div class="mc-desc">Describe any vulnerability or security concern in plain language — pen test notes, incident reports, anything.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-title">Add context for better results</div>
+      <div class="step-desc">
+        The more context you provide, the more actionable the triage. In CVE mode, fill in your <strong>tech stack</strong> (e.g. <em>Java Spring Boot 3.1, PostgreSQL</em>) and set the <strong>exposure level</strong>. In Contrast Finding mode, add the app name, environment, and any notes about data sensitivity or authentication.
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <div class="step-title">Click Analyze and read your report</div>
+      <div class="step-desc">Hit <strong>Analyze Vulnerability</strong> and your triage report will appear in a few seconds.</div>
+    </div>
+  </div>
+
+  <div class="section-heading">Understanding the output</div>
+
+  <div class="legend">
+    <div class="legend-row">
+      <div class="legend-icon icon-red">!</div>
+      <div class="legend-label">What this is</div>
+      <div class="legend-detail">Plain-English explanation of the vulnerability — no jargon, just what it is and why it matters.</div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-icon icon-amber">&#9651;</div>
+      <div class="legend-label">Attack scenario</div>
+      <div class="legend-detail">A realistic, concrete description of how an attacker would actually exploit this in practice.</div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-icon icon-blue">i</div>
+      <div class="legend-label">Context assessment</div>
+      <div class="legend-detail">Risk evaluated against your specific stack, exposure, and environment — not generic boilerplate.</div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-icon icon-green">&#10003;</div>
+      <div class="legend-label">Remediation steps</div>
+      <div class="legend-detail">Numbered, actionable fix steps ordered by priority. Start from step 1.</div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-icon icon-muted">C</div>
+      <div class="legend-label">Contrast notes</div>
+      <div class="legend-detail">How Contrast Security's IAST, ADR, or SCA would detect or block this class of vulnerability.</div>
+    </div>
+  </div>
+
+  <div class="section-heading">Tips</div>
+
+  <div class="note"><strong>More context = better triage.</strong> Telling the tool your framework, whether the endpoint requires auth, and how sensitive the data is will produce a dramatically more useful risk assessment than a bare CVE ID.</div>
+  <div class="note"><strong>Try the CVE Fetch button.</strong> It works great for any CVE from the last few years — it uses Gemini to write a clear, human-readable summary so you don't have to wade through NVD XML.</div>
+  <div class="note"><strong>Privacy:</strong> Nothing you enter is stored anywhere. The app has no backend — your input goes directly from your browser to Google's Gemini API, and that's it.</div>
+
+  <div class="cta">
+    <a href="index.html">&#9650; Open VulnTriage &rarr;</a>
+  </div>
+
+  <footer>VulnTriage &mdash; AI Security Lookup &mdash; Built for Contrast Security Hackathon &mdash; Powered by Gemini</footer>
+</div>
+</body>
+</html>
