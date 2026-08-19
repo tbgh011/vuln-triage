@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VulnTriage — AI Security Copilot</title>
+<title>VulnTriage — AI Security Triage</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -168,7 +168,7 @@
     margin-bottom: 8px;
   }
 
-  textarea, input[type="text"] {
+  textarea, input[type="text"], input[type="password"] {
     width: 100%;
     background: var(--surface);
     border: 1px solid var(--border2);
@@ -182,7 +182,7 @@
     transition: border-color 0.15s;
     line-height: 1.6;
   }
-  textarea:focus, input[type="text"]:focus {
+  textarea:focus, input[type="text"]:focus, input[type="password"]:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-dim2);
   }
@@ -213,6 +213,7 @@
     background-position: right 14px center;
   }
   select:focus { border-color: var(--accent); }
+
 
   /* CVE panel specific */
   .cve-id-row { display: flex; gap: 10px; align-items: flex-start; }
@@ -585,7 +586,7 @@
   <div id="results"></div>
 
   <footer>
-    <span>VulnTriage &mdash; AI Security Copilot &mdash; Built for Contrast Security Hackathon</span>
+    <span>VulnTriage &mdash; AI Security Triage &mdash; Built for Contrast Security Hackathon</span>
     <a href="quickstart.html" style="color: var(--accent); text-decoration: none; font-size: 11px;">Quickstart Guide &rarr;</a>
   </footer>
 
@@ -604,32 +605,50 @@
     document.getElementById('results').innerHTML = '';
   }
 
+  function getApiKey() {
+    const key = document.getElementById('api-key').value.trim();
+    if (!key) { alert('Please enter your Gemini API key.'); return null; }
+    return key;
+  }
+
+  // Single entry point for every model call. Returns the reply text.
+  async function callAI(apiKey, systemPrompt, userPrompt, maxTokens) {
+    const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+        generationConfig: { maxOutputTokens: maxTokens }
+      })
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (data.error) throw new Error(data.error.message);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status + ' ' + resp.statusText);
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  }
+
   async function lookupCVE() {
     const cveId = document.getElementById('cve-id-input').value.trim();
     if (!cveId.match(/CVE-\d{4}-\d+/i)) {
       alert('Please enter a valid CVE ID (e.g. CVE-2024-12345)');
       return;
     }
-    const apiKey = document.getElementById('api-key').value.trim();
-    if (!apiKey) { alert('Please enter your Gemini API key first.'); return; }
+    const apiKey = getApiKey();
+    if (!apiKey) return;
 
     const btn = document.querySelector('.lookup-btn');
     btn.textContent = 'Fetching...';
     btn.disabled = true;
 
     try {
-      const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: 'You are a CVE lookup assistant. When given a CVE ID, return only a concise 3-5 sentence plain-English description of what the vulnerability is, what software is affected, and what an attacker can do with it. No JSON, no markdown, just clean prose.' }] },
-          contents: [{ role: 'user', parts: [{ text: 'Describe ' + cveId }] }],
-          generationConfig: { maxOutputTokens: 600 }
-        })
-      });
-      const data = await resp.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      document.getElementById('cve-desc').value = text;
+      const text = await callAI(
+        apiKey,
+        'You are a CVE lookup assistant. When given a CVE ID, return only a concise 3-5 sentence plain-English description of what the vulnerability is, what software is affected, and what an attacker can do with it. No JSON, no markdown, just clean prose.',
+        'Describe ' + cveId,
+        600
+      );
+      document.getElementById('cve-desc').value = text.trim();
     } catch(e) {
       alert('CVE lookup failed: ' + e.message);
     }
@@ -761,8 +780,8 @@
   }
 
   async function analyze() {
-    const apiKey = document.getElementById('api-key').value.trim();
-    if (!apiKey) { alert('Please enter your Gemini API key.'); return; }
+    const apiKey = getApiKey();
+    if (!apiKey) return;
 
     const prompt = buildPrompt();
     if (!prompt.trim()) { alert('Please fill in the vulnerability details.'); return; }
@@ -792,31 +811,13 @@ Given a vulnerability description, Contrast Security finding, or security issue,
 Be direct, practical, and opinionated. Prioritize actionability over comprehensiveness.`;
 
     try {
-      const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 4000 }
-        })
-      });
-
-      const data = await resp.json();
-
-      if (data.error) {
-        document.getElementById('results').innerHTML = `<div class="error-box">API Error: ${escHtml(data.error.message)}</div>`;
-        setLoading(false);
-        return;
-      }
-
-      let text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-      text = text.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+      let text = await callAI(apiKey, systemPrompt, prompt, 4000);
+      text = (text || '{}').replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
       const json = JSON.parse(text);
       document.getElementById('results').innerHTML = renderResults(json);
 
     } catch(e) {
-      document.getElementById('results').innerHTML = `<div class="error-box">Error: ${escHtml(e.message)}. Check your API key and try again.</div>`;
+      document.getElementById('results').innerHTML = `<div class="error-box">Error: ${escHtml(e.message.replace(/[.\s]+$/, ""))}. Check your API key and try again.</div>`;
     }
 
     setLoading(false);

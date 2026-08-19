@@ -138,6 +138,23 @@
   }
   .step-desc a { color: var(--accent); text-decoration: none; }
   .step-desc a:hover { text-decoration: underline; }
+  .step-desc ol {
+    margin: 8px 0 0 0;
+    padding-left: 20px;
+  }
+  .step-desc ol li {
+    margin-bottom: 6px;
+    padding-left: 4px;
+  }
+  .step-desc ol li::marker { color: var(--accent); }
+  .step-desc code {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 12px;
+    color: var(--accent);
+  }
 
   /* Code snippet */
   .code-block {
@@ -310,9 +327,17 @@
     <div class="step-body">
       <div class="step-title">Get a free Google Gemini API key</div>
       <div class="step-desc">
-        VulnTriage is powered by Google Gemini. You'll need a free API key — no credit card required.<br><br>
-        Go to <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>, sign in with your Google account, and click <strong>Create API key</strong>. It's instant and completely free.
+        VulnTriage runs on Google Gemini. You'll need a free API key — no credit card, no billing setup. Never done this before? Follow these exactly:
+        <ol>
+          <li>Go to <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> and sign in with any Google account.</li>
+          <li>Accept the Google AI Studio terms if you're prompted — this is a one-time step.</li>
+          <li>Click <strong>Create API key</strong>. If it asks which project to use, pick <strong>Create API key in new project</strong>.</li>
+          <li>Click the <strong>copy</strong> icon next to the key that appears. It looks like this:</li>
+        </ol>
         <div class="code-block">AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</div>
+        Unlike most API keys, you can come back to this page and copy it again later — it isn't a one-time reveal.
+
+        <div class="note" style="margin-bottom:0;"><strong>Why only Gemini?</strong> VulnTriage has no backend, so it can only use APIs that accept requests straight from a browser. Gemini does. Microsoft's options don't: <strong>GitHub Models</strong> was retired on 30 July 2026 and now returns <code>410 Gone</code>, and <strong>Azure OpenAI</strong> sends no CORS headers, so a browser refuses the request unless you put a proxy in front of it. The consumer Copilot app and Microsoft 365 Copilot have no public key-based API at all.</div>
       </div>
     </div>
   </div>
@@ -322,7 +347,7 @@
     <div class="step-body">
       <div class="step-title">Enter your key in the app</div>
       <div class="step-desc">
-        Paste your API key into the <strong>Google Gemini API Key</strong> field at the bottom of the form. Your key is used directly in the browser and is never sent to any third-party server — it goes straight from your browser to Google's API.
+        Paste your key into the <strong>Google Gemini API Key</strong> field at the bottom of the form. It's used directly in the browser and is never sent to any third-party server — it goes straight from your browser to Google's API.
       </div>
     </div>
   </div>
@@ -407,7 +432,7 @@
     <a href="index.html">&#9650; Open VulnTriage &rarr;</a>
   </div>
 
-  <footer>VulnTriage &mdash; AI Security Lookup &mdash; Built for Contrast Security Hackathon &mdash; Powered by Gemini</footer>
+  <footer>VulnTriage &mdash; AI Security Triage &mdash; Built for Contrast Security Hackathon &mdash; Powered by Gemini</footer>
 </div>
 </body>
 </html>
