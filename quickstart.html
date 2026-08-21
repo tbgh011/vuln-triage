@@ -301,7 +301,7 @@
 
   <header>
     <div>
-      <div class="logo-eyebrow">&#9632; Contrast Security — Hackathon 2026</div>
+      <div class="logo-eyebrow">&#9632; AI-Assisted Security Triage</div>
       <div class="logo-title">Vuln<span>Triage</span></div>
       <div class="logo-sub">Quickstart Guide</div>
     </div>
@@ -311,10 +311,10 @@
   <div class="section-heading">What is VulnTriage?</div>
 
   <p style="font-size: 13.5px; color: var(--muted); line-height: 1.8; margin-bottom: 1rem;">
-    VulnTriage is an AI-powered vulnerability and CVE triage lookup tool built for security and development teams. Instead of wading through dense NVD advisories or raw Contrast Security findings, you paste in a vulnerability and get back a structured, plain-English triage report in seconds.
+    VulnTriage is an AI-powered vulnerability and CVE triage lookup tool built for security and development teams. Instead of wading through dense NVD advisories or raw scanner findings, you paste in a vulnerability and get back a structured, plain-English triage report in seconds.
   </p>
   <p style="font-size: 13.5px; color: var(--muted); line-height: 1.8; margin-bottom: 1rem;">
-    It tells you what the vulnerability actually is, how an attacker would exploit it in practice, how risky it is given your specific stack and environment, and what to do about it — in priority order. It also notes how Contrast Security's IAST, ADR, and SCA tooling would detect or block that class of vulnerability.
+    It tells you what the vulnerability actually is, how an attacker would exploit it in practice, how risky it is given your specific stack and environment, and what to do about it — in priority order. It also notes how runtime protection, IAST, and SCA tooling would detect or block that class of vulnerability.
   </p>
   <p style="font-size: 13.5px; color: var(--muted); line-height: 1.8; margin-bottom: 0;">
     It runs entirely in the browser — no backend, no accounts, no data stored. Just your browser, your API key, and Gemini.
@@ -363,8 +363,8 @@
           <div class="mc-desc">Enter a CVE ID and hit "Fetch CVE" to auto-populate the description, or paste advisory text manually.</div>
         </div>
         <div class="mode-card">
-          <div class="mc-label">Contrast Finding</div>
-          <div class="mc-desc">Paste a finding directly from the Contrast dashboard — rule name, route, evidence, stack trace.</div>
+          <div class="mc-label">Security Finding</div>
+          <div class="mc-desc">Paste a finding directly from your scanner or security dashboard — rule name, route, evidence, stack trace.</div>
         </div>
         <div class="mode-card">
           <div class="mc-label">Freeform</div>
@@ -379,7 +379,7 @@
     <div class="step-body">
       <div class="step-title">Add context for better results</div>
       <div class="step-desc">
-        The more context you provide, the more actionable the triage. In CVE mode, fill in your <strong>tech stack</strong> (e.g. <em>Java Spring Boot 3.1, PostgreSQL</em>) and set the <strong>exposure level</strong>. In Contrast Finding mode, add the app name, environment, and any notes about data sensitivity or authentication.
+        The more context you provide, the more actionable the triage. In CVE mode, fill in your <strong>tech stack</strong> (e.g. <em>Java Spring Boot 3.1, PostgreSQL</em>) and set the <strong>exposure level</strong>. In Security Finding mode, add the app name, environment, and any notes about data sensitivity or authentication.
       </div>
     </div>
   </div>
@@ -416,9 +416,9 @@
       <div class="legend-detail">Numbered, actionable fix steps ordered by priority. Start from step 1.</div>
     </div>
     <div class="legend-row">
-      <div class="legend-icon icon-muted">C</div>
-      <div class="legend-label">Contrast notes</div>
-      <div class="legend-detail">How Contrast Security's IAST, ADR, or SCA would detect or block this class of vulnerability.</div>
+      <div class="legend-icon icon-muted">D</div>
+      <div class="legend-label">Detection notes</div>
+      <div class="legend-detail">How runtime protection, IAST, or SCA tooling would detect or block this class of vulnerability.</div>
     </div>
   </div>
 
@@ -432,7 +432,7 @@
     <a href="index.html">&#9650; Open VulnTriage &rarr;</a>
   </div>
 
-  <footer>VulnTriage &mdash; AI Security Triage &mdash; Built for Contrast Security Hackathon &mdash; Powered by Gemini</footer>
+  <footer>VulnTriage &mdash; AI Security Triage &mdash; Powered by Gemini</footer>
 </div>
 </body>
 </html>

@@ -489,7 +489,7 @@
 
   <header>
     <div class="logo-block">
-      <div class="logo-eyebrow">&#9632; Contrast Security — Hackathon 2025</div>
+      <div class="logo-eyebrow">&#9632; AI-Assisted Security Triage</div>
       <div class="logo-title">Vuln<span>Triage</span></div>
       <div class="logo-sub">AI-powered vulnerability & CVE triage lookup</div>
     </div>
@@ -499,7 +499,7 @@
   <!-- Mode tabs -->
   <div class="mode-tabs">
     <button class="mode-tab active" onclick="switchMode('cve')">CVE Lookup</button>
-    <button class="mode-tab" onclick="switchMode('finding')">Contrast Finding</button>
+    <button class="mode-tab" onclick="switchMode('finding')">Security Finding</button>
     <button class="mode-tab" onclick="switchMode('freeform')">Freeform</button>
   </div>
 
@@ -534,11 +534,11 @@
     </div>
   </div>
 
-  <!-- Contrast Finding Mode -->
+  <!-- Security Finding Mode -->
   <div class="input-panel" id="panel-finding">
     <div class="field-group">
-      <div class="field-label">Contrast Finding / Alert</div>
-      <div class="field-hint">Paste the finding details from the Contrast dashboard — name, rule, route, evidence, etc.</div>
+      <div class="field-label">Security Finding / Alert</div>
+      <div class="field-hint">Paste the finding details from your scanner or security dashboard — name, rule, route, evidence, etc.</div>
       <textarea id="finding-text" placeholder="e.g.&#10;Rule: SQL Injection&#10;Severity: Critical&#10;Route: POST /api/users/search&#10;Evidence: Tainted value from HTTP param 'query' reaches JDBC sink&#10;Stack trace: UserService.java:142..." style="min-height: 160px;"></textarea>
     </div>
     <div class="field-row">
@@ -586,7 +586,7 @@
   <div id="results"></div>
 
   <footer>
-    <span>VulnTriage &mdash; AI Security Triage &mdash; Built for Contrast Security Hackathon</span>
+    <span>VulnTriage &mdash; AI Security Triage</span>
     <a href="quickstart.html" style="color: var(--accent); text-decoration: none; font-size: 11px;">Quickstart Guide &rarr;</a>
   </footer>
 
@@ -668,7 +668,7 @@
       const app = document.getElementById('finding-app').value.trim();
       const env = document.getElementById('finding-env').value;
       const ctx = document.getElementById('finding-context').value.trim();
-      return `Contrast Security Finding:\n${finding}\n\nApplication: ${app || 'Not specified'}\nEnvironment: ${env}\n${ctx ? 'Additional context:\n' + ctx : ''}`;
+      return `Security Finding:\n${finding}\n\nApplication: ${app || 'Not specified'}\nEnvironment: ${env}\n${ctx ? 'Additional context:\n' + ctx : ''}`;
     } else {
       return document.getElementById('freeform-text').value.trim();
     }
@@ -755,13 +755,13 @@
       <ol class="steps-list">${stepsHtml}</ol>
     </div>
 
-    ${json.contrast_relevance ? `
+    ${json.detection_notes ? `
     <div class="result-section">
       <div class="rs-head">
-        <div class="rs-icon icon-muted">C</div>
-        <div class="rs-title">Contrast detection notes</div>
+        <div class="rs-icon icon-muted">D</div>
+        <div class="rs-title">Detection notes</div>
       </div>
-      <div class="rs-body">${escHtml(json.contrast_relevance)}</div>
+      <div class="rs-body">${escHtml(json.detection_notes)}</div>
     </div>` : ''}
 
     ${json.references && json.references.length ? `
@@ -789,9 +789,9 @@
     setLoading(true);
     document.getElementById('results').innerHTML = '';
 
-    const systemPrompt = `You are VulnTriage, an expert application security analyst working at Contrast Security. You specialize in triage of CVEs and runtime security findings.
+    const systemPrompt = `You are VulnTriage, an expert application security analyst. You specialize in triage of CVEs and runtime security findings.
 
-Given a vulnerability description, Contrast Security finding, or security issue, respond ONLY with a JSON object (no markdown fences, no preamble) with these exact fields:
+Given a vulnerability description, scanner finding, or security issue, respond ONLY with a JSON object (no markdown fences, no preamble) with these exact fields:
 
 {
   "severity": "CRITICAL|HIGH|MEDIUM|LOW|INFO",
@@ -804,7 +804,7 @@ Given a vulnerability description, Contrast Security finding, or security issue,
   "attack_scenario": "A realistic, concrete 2-3 sentence scenario describing how an attacker would actually exploit this in practice.",
   "context_assessment": "2-3 sentences assessing the risk given the specific context provided (tech stack, exposure, environment). Be specific and actionable.",
   "remediation_steps": ["Step 1 as a clear action", "Step 2", "Step 3", "Step 4 (up to 6 steps max)"],
-  "contrast_relevance": "1-2 sentences on how Contrast Security IAST/ADR/SCA would detect or protect against this type of vulnerability.",
+  "detection_notes": "1-2 sentences on how runtime protection, IAST/SAST/DAST, or SCA tooling would detect or protect against this type of vulnerability.",
   "references": ["NVD link or advisory URL if applicable"]
 }
 
