@@ -147,6 +147,15 @@
     padding-left: 4px;
   }
   .step-desc ol li::marker { color: var(--accent); }
+  .opt-label {
+    display: block;
+    margin-top: 18px;
+    margin-bottom: 2px;
+    color: var(--text);
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 14px;
+  }
   .step-desc code {
     background: var(--surface);
     border: 1px solid var(--border2);
@@ -317,7 +326,7 @@
     It tells you what the vulnerability actually is, how an attacker would exploit it in practice, how risky it is given your specific stack and environment, and what to do about it — in priority order. It also notes how runtime protection, IAST, and SCA tooling would detect or block that class of vulnerability.
   </p>
   <p style="font-size: 13.5px; color: var(--muted); line-height: 1.8; margin-bottom: 0;">
-    It runs entirely in the browser — no backend, no accounts, no data stored. Just your browser, your API key, and Gemini.
+    It runs entirely in the browser — no backend, no accounts, no data stored. Just your browser and the triage engine you pick: Google Gemini, Groq, or Microsoft Copilot. All three are free.
   </p>
 
   <div class="section-heading" style="margin-top: 2rem;">Getting started</div>
@@ -325,9 +334,12 @@
   <div class="step">
     <div class="step-num">1</div>
     <div class="step-body">
-      <div class="step-title">Get a free Google Gemini API key</div>
+      <div class="step-title">Pick a triage engine</div>
       <div class="step-desc">
-        VulnTriage runs on Google Gemini. You'll need a free API key — no credit card, no billing setup. Never done this before? Follow these exactly:
+        VulnTriage can triage with any of three engines, and none of them costs anything. Pick one with the <strong>Triage Engine</strong> switch just above the Analyze button — they work quite differently, so it's worth knowing which you want.
+
+        <span class="opt-label">Google Gemini — the report appears on this page</span>
+        Gemini is called directly from your browser, and VulnTriage renders the answer as a structured triage report right below the form: severity, exploitability, attack scenario, ordered remediation steps. This is the full experience, and it needs a free API key. Never made one? Follow these exactly:
         <ol>
           <li>Go to <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> and sign in with any Google account.</li>
           <li>Accept the Google AI Studio terms if you're prompted — this is a one-time step.</li>
@@ -335,9 +347,27 @@
           <li>Click the <strong>copy</strong> icon next to the key that appears. It looks like this:</li>
         </ol>
         <div class="code-block">AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</div>
-        Unlike most API keys, you can come back to this page and copy it again later — it isn't a one-time reveal.
+        Unlike most API keys, you can come back to this page and copy it again later — it isn't a one-time reveal. Paste it into the key field under the Gemini tab.
 
-        <div class="note" style="margin-bottom:0;"><strong>Why only Gemini?</strong> VulnTriage has no backend, so it can only use APIs that accept requests straight from a browser. Gemini does. Microsoft's options don't: <strong>GitHub Models</strong> was retired on 30 July 2026 and now returns <code>410 Gone</code>, and <strong>Azure OpenAI</strong> sends no CORS headers, so a browser refuses the request unless you put a proxy in front of it. The consumer Copilot app and Microsoft 365 Copilot have no public key-based API at all.</div>
+        <span class="opt-label">Groq — same report, usually faster</span>
+        Groq runs open-weight models (Llama, Qwen, GPT-OSS) on its own accelerators, and the free tier needs no credit card — just an account and a key. It renders the identical structured report on this page, normally in a second or two.
+        <ol>
+          <li>Go to <a href="https://console.groq.com/keys" target="_blank">console.groq.com/keys</a> and sign in.</li>
+          <li>Click <strong>Create API Key</strong>, give it a name, and copy the value — it starts <code>gsk_</code> and is shown once.</li>
+          <li>Paste it into the key field under the Groq tab. The model list refreshes to whatever your account can use.</li>
+        </ol>
+        The free tier is rate-limited rather than billed, so heavy use gets throttled instead of charged.
+
+        <span class="opt-label">Microsoft Copilot — the report appears in a Copilot tab</span>
+        No key, no signup, nothing to configure. Fill in the vulnerability details as usual, then click <strong>Copy Prompt &amp; Open Copilot</strong>. VulnTriage builds the same triage prompt it would send to Gemini, copies it to your clipboard, and opens Copilot in a new tab — paste with <strong>Ctrl+V</strong> (<strong>Cmd+V</strong> on Mac) and press enter.
+        <ol>
+          <li>Choose <strong>Microsoft Copilot</strong> on the Triage Engine switch.</li>
+          <li>Fill in the CVE, finding, or freeform description as normal — <strong>Fetch CVE</strong> works here too, since it reads the NVD rather than an AI engine.</li>
+          <li>Click <strong>Copy Prompt &amp; Open Copilot</strong>.</li>
+          <li>Paste into Copilot's message box and send.</li>
+        </ol>
+
+        <div class="note" style="margin-bottom:0;"><strong>Why the paste step?</strong> Copilot has no API a web page is allowed to call, and its <code>?q=</code> link parameter is discarded on load — so there is no way to push the prompt in automatically. The clipboard hand-off is the reliable substitute. It also means the structured report, the severity badges, and the remediation checklist are Gemini-only: with Copilot you get Copilot's own answer in its own tab.</div>
       </div>
     </div>
   </div>
@@ -345,9 +375,9 @@
   <div class="step">
     <div class="step-num">2</div>
     <div class="step-body">
-      <div class="step-title">Enter your key in the app</div>
+      <div class="step-title">Run the triage</div>
       <div class="step-desc">
-        Paste your key into the <strong>Google Gemini API Key</strong> field at the bottom of the form. It's used directly in the browser and is never sent to any third-party server — it goes straight from your browser to Google's API.
+        With Gemini selected, paste your key into the field under the engine switch and hit <strong>Analyze Vulnerability</strong> — the report renders below the form. Your key is used directly in the browser and is never sent to any third-party server; it goes straight from your browser to Google's API. With Copilot selected there's no key field — the button becomes <strong>Copy Prompt &amp; Open Copilot</strong> instead.
       </div>
     </div>
   </div>
@@ -425,14 +455,14 @@
   <div class="section-heading">Tips</div>
 
   <div class="note"><strong>More context = better triage.</strong> Telling the tool your framework, whether the endpoint requires auth, and how sensitive the data is will produce a dramatically more useful risk assessment than a bare CVE ID.</div>
-  <div class="note"><strong>Try the CVE Fetch button.</strong> It works great for any CVE from the last few years — it uses Gemini to write a clear, human-readable summary so you don't have to wade through NVD XML.</div>
-  <div class="note"><strong>Privacy:</strong> Nothing you enter is stored anywhere. The app has no backend — your input goes directly from your browser to Google's Gemini API, and that's it.</div>
+  <div class="note"><strong>Try the CVE Fetch button.</strong> Type any CVE ID and it pulls the official description, CVSS base score and attack vector straight from the NVD — no API key, and it works whichever engine you've picked. That saves you copying advisory text by hand, and gives the engine authoritative scoring to reason about. Anonymous NVD lookups are capped at 5 per 30 seconds; if you hit that, wait a moment and retry.</div>
+  <div class="note"><strong>Privacy:</strong> Nothing you enter is stored anywhere. The app has no backend — your input goes directly from your browser to Google's Gemini API — or, with the Copilot engine, only to your own clipboard until you paste it.</div>
 
   <div class="cta">
     <a href="index.html">&#9650; Open VulnTriage &rarr;</a>
   </div>
 
-  <footer>VulnTriage &mdash; AI Security Triage &mdash; Powered by Gemini</footer>
+  <footer>VulnTriage &mdash; AI Security Triage &mdash; Powered by Gemini, Groq, or Microsoft Copilot</footer>
 </div>
 </body>
 </html>

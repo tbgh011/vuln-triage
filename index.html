@@ -273,6 +273,120 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* Triage engine selector */
+  .engine-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 3px;
+    margin-bottom: 10px;
+  }
+  .engine-tab {
+    flex: 1 1 30%;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+    border: none;
+    background: none;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+  }
+  .engine-tab.active {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid rgba(0,229,160,0.3);
+  }
+  .engine-tab:hover:not(.active) { color: var(--text); }
+  .engine-panel { display: none; }
+  .engine-panel.active { display: block; }
+  /* Copilot hand-off panel */
+  .handoff {
+    margin-top: 1.5rem;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .handoff-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--accent-dim2);
+    border-bottom: 1px solid var(--border);
+  }
+  .handoff-check {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    border: 1px solid rgba(0,229,160,0.35);
+    color: var(--accent);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .handoff-check.warn {
+    background: var(--amber-dim);
+    border-color: rgba(255,179,71,0.35);
+    color: var(--amber);
+  }
+  .handoff-title {
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .handoff-body { padding: 14px; }
+  .handoff-steps {
+    margin: 0 0 14px 18px;
+    padding: 0;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.9;
+  }
+  .handoff-steps li::marker { color: var(--accent); }
+  .handoff-steps kbd {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text);
+  }
+  .handoff-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .handoff-actions button {
+    background: var(--accent-dim);
+    border: 1px solid rgba(0,229,160,0.3);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 9px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+  }
+  .handoff-actions button:hover { background: rgba(0,229,160,0.2); }
+  .handoff details { margin-top: 12px; }
+  .handoff summary {
+    font-size: 11px;
+    color: var(--muted);
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+  .handoff summary:hover { color: var(--text); }
+  .handoff details textarea { margin-top: 8px; min-height: 200px; }
+
   /* Results */
   #results { margin-top: 2rem; }
 
@@ -476,6 +590,8 @@
     .field-row { grid-template-columns: 1fr; }
     header { flex-direction: column; gap: 1rem; }
     .logo-title { font-size: 22px; }
+    .engine-tab { font-size: 11px; padding: 8px 4px; letter-spacing: 0; }
+    .engine-tab .vendor { display: none; }
   }
 </style>
 </head>
@@ -507,7 +623,7 @@
   <div class="input-panel active" id="panel-cve">
     <div class="field-group">
       <div class="field-label">CVE Identifier</div>
-      <div class="field-hint">Enter a CVE ID and we'll fetch the description — or paste it manually below.</div>
+      <div class="field-hint">Enter a CVE ID to pull the official description and CVSS score straight from the NVD — no API key needed, works with either engine. Or paste the details manually below.</div>
       <div class="cve-id-row">
         <input type="text" id="cve-id-input" placeholder="CVE-2024-XXXXX" />
         <button class="lookup-btn" onclick="lookupCVE()">&#8599; Fetch CVE</button>
@@ -571,14 +687,39 @@
     </div>
   </div>
 
-  <!-- API Key -->
+  <!-- Triage engine -->
   <div class="field-group" style="margin-top: 1rem; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;">
-    <div class="field-label">Google Gemini API Key</div>
-    <div class="field-hint">Free at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent);text-decoration:none;">aistudio.google.com/apikey</a> — no credit card required. Never stored or sent to any server.</div>
-    <input type="password" id="api-key" placeholder="AIzaSy..." />
+    <div class="field-label">Triage Engine</div>
+    <div class="engine-tabs">
+      <button class="engine-tab active" id="engine-tab-gemini" onclick="switchEngine('gemini')"><span class="vendor">Google </span>Gemini</button>
+      <button class="engine-tab" id="engine-tab-groq" onclick="switchEngine('groq')">Groq</button>
+      <button class="engine-tab" id="engine-tab-copilot" onclick="switchEngine('copilot')"><span class="vendor">Microsoft </span>Copilot</button>
+    </div>
+
+    <div class="engine-panel active" id="engine-gemini">
+      <div class="field-hint">Runs inside this page and renders a structured triage report below. Needs a free API key from <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent);text-decoration:none;">aistudio.google.com/apikey</a> — no credit card required, never stored or sent to any server.</div>
+      <input type="password" id="api-key" placeholder="AIzaSy..." />
+    </div>
+
+    <div class="engine-panel" id="engine-groq">
+      <div class="field-hint">Renders the same structured report on this page, usually faster than Gemini. Free key at <a href="https://console.groq.com/keys" target="_blank" style="color:var(--accent);text-decoration:none;">console.groq.com/keys</a> — no credit card, just rate limits. Runs open models (Llama, Qwen, GPT-OSS) on Groq's hardware. Your key stays in this browser.</div>
+      <input type="password" id="groq-key" placeholder="gsk_..." onchange="loadGroqModels()" />
+      <div class="field-label" style="margin-top: 12px;">Model</div>
+      <select id="groq-model">
+        <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile</option>
+        <option value="llama-3.1-8b-instant">llama-3.1-8b-instant — fastest</option>
+        <option value="openai/gpt-oss-120b">openai/gpt-oss-120b</option>
+        <option value="qwen/qwen3-32b">qwen/qwen3-32b</option>
+      </select>
+      <div class="field-hint" id="groq-model-note" style="margin-top: 6px;">Enter your key and this list refreshes with the models your account can actually use.</div>
+    </div>
+
+    <div class="engine-panel" id="engine-copilot">
+      <div class="field-hint">No API key, no signup — good for a second opinion alongside Gemini. VulnTriage writes the triage prompt, copies it, and opens Copilot ready to paste. <strong style="color:var(--text);">Your report appears in the Copilot tab, not on this page.</strong></div>
+    </div>
   </div>
 
-  <button class="analyze-btn" id="analyze-btn" onclick="analyze()">
+  <button class="analyze-btn" id="analyze-btn" onclick="runTriage()">
     <span class="spinner" id="spinner"></span>
     <span id="btn-text">&#9650; Analyze Vulnerability</span>
   </button>
@@ -594,6 +735,7 @@
 
 <script>
   let currentMode = 'cve';
+  let currentEngine = 'gemini';
 
   function switchMode(mode) {
     currentMode = mode;
@@ -605,15 +747,24 @@
     document.getElementById('results').innerHTML = '';
   }
 
-  function getApiKey() {
+  // Credentials for whichever in-page engine is selected. Returns null after
+  // alerting if something is missing. Copilot needs none.
+  function getEngineConfig() {
+    if (currentEngine === 'groq') {
+      const key = document.getElementById('groq-key').value.trim();
+      if (!key) { alert('Please enter your Groq API key.'); return null; }
+      return { engine: 'groq', key, model: document.getElementById('groq-model').value };
+    }
     const key = document.getElementById('api-key').value.trim();
     if (!key) { alert('Please enter your Gemini API key.'); return null; }
-    return key;
+    return { engine: 'gemini', key };
   }
 
   // Single entry point for every model call. Returns the reply text.
-  async function callAI(apiKey, systemPrompt, userPrompt, maxTokens) {
-    const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey, {
+  async function callAI(cfg, systemPrompt, userPrompt, maxTokens) {
+    if (cfg.engine === 'groq') return callGroq(cfg, systemPrompt, userPrompt, maxTokens);
+
+    const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + cfg.key, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -628,31 +779,117 @@
     return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
   }
 
+  const GROQ_BASE = 'https://api.groq.com/openai/v1';
+
+  // Groq retires model IDs fairly often, so refresh the list from the account
+  // once a key is present. The hardcoded options are only a starting point.
+  async function loadGroqModels() {
+    const key = document.getElementById('groq-key').value.trim();
+    const note = document.getElementById('groq-model-note');
+    if (!key) return;
+
+    note.textContent = 'Loading available models...';
+    try {
+      const resp = await fetch(GROQ_BASE + '/models', { headers: { 'Authorization': 'Bearer ' + key } });
+      const data = await resp.json().catch(() => ({}));
+      if (data.error) throw new Error(data.error.message);
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+      // Drop the audio/guard models; they cannot answer a triage prompt.
+      const ids = (data.data || [])
+        .map(m => m.id)
+        .filter(id => !/whisper|tts|guard|prompt-?guard/i.test(id))
+        .sort();
+      if (!ids.length) throw new Error('no chat models returned');
+
+      const select = document.getElementById('groq-model');
+      const previous = select.value;
+      select.innerHTML = ids.map(id => '<option value="' + escHtml(id) + '">' + escHtml(id) + '</option>').join('');
+      if (ids.includes(previous)) select.value = previous;
+      note.textContent = ids.length + ' models available on your account.';
+    } catch (e) {
+      note.textContent = 'Could not load the model list (' + e.message + '). The defaults above may still work.';
+    }
+  }
+
+  async function callGroq(cfg, systemPrompt, userPrompt, maxTokens) {
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ];
+
+    const send = async (tokenField) => {
+      const body = { model: cfg.model, messages };
+      body[tokenField] = maxTokens;
+      const resp = await fetch(GROQ_BASE + '/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.key },
+        body: JSON.stringify(body)
+      });
+      return { resp, data: await resp.json().catch(() => ({})) };
+    };
+
+    // Reasoning-era models reject max_tokens and want max_completion_tokens.
+    let { resp, data } = await send('max_tokens');
+    if (data.error && /max_completion_tokens/.test(data.error.message || '')) {
+      ({ resp, data } = await send('max_completion_tokens'));
+    }
+    if (data.error) throw new Error(data.error.message);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status + ' ' + resp.statusText);
+
+    let text = data.choices?.[0]?.message?.content || '';
+    // Some open reasoning models emit a <think> block before the answer.
+    return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+  }
+
+
   async function lookupCVE() {
-    const cveId = document.getElementById('cve-id-input').value.trim();
-    if (!cveId.match(/CVE-\d{4}-\d+/i)) {
+    const cveId = document.getElementById('cve-id-input').value.trim().toUpperCase();
+    if (!cveId.match(/^CVE-\d{4}-\d+$/)) {
       alert('Please enter a valid CVE ID (e.g. CVE-2024-12345)');
       return;
     }
-    const apiKey = getApiKey();
-    if (!apiKey) return;
 
     const btn = document.querySelector('.lookup-btn');
     btn.textContent = 'Fetching...';
     btn.disabled = true;
 
     try {
-      const text = await callAI(
-        apiKey,
-        'You are a CVE lookup assistant. When given a CVE ID, return only a concise 3-5 sentence plain-English description of what the vulnerability is, what software is affected, and what an attacker can do with it. No JSON, no markdown, just clean prose.',
-        'Describe ' + cveId,
-        600
-      );
-      document.getElementById('cve-desc').value = text.trim();
+      // Plain GET with no custom headers, so the browser skips the preflight.
+      // NVD serves Access-Control-Allow-Origin: *, and no API key is required.
+      const resp = await fetch('https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=' + encodeURIComponent(cveId));
+      if (resp.status === 403 || resp.status === 429) {
+        throw new Error('NVD is rate-limiting anonymous lookups (5 per 30 seconds). Wait a moment and try again.');
+      }
+      if (!resp.ok) throw new Error('NVD returned HTTP ' + resp.status + ' ' + resp.statusText);
+
+      const data = await resp.json();
+      const cve = data.vulnerabilities?.[0]?.cve;
+      if (!cve) throw new Error(cveId + ' was not found in the NVD catalogue.');
+
+      const description = (cve.descriptions || []).find(d => d.lang === 'en')?.value
+        || 'No English description published.';
+
+      // Prefer the newest CVSS version NVD has for this record.
+      const metrics = cve.metrics || {};
+      const metric = (metrics.cvssMetricV31 || metrics.cvssMetricV30 || metrics.cvssMetricV2 || [])[0];
+      const lines = [description];
+
+      if (metric && metric.cvssData) {
+        const c = metric.cvssData;
+        lines.push('', 'Official NVD scoring:',
+          'CVSS ' + (c.version || '') + ': ' + c.baseScore +
+          (c.baseSeverity ? ' (' + c.baseSeverity + ')' : ''),
+          'Vector: ' + c.vectorString);
+      }
+      if (cve.published) lines.push('Published: ' + cve.published.slice(0, 10));
+
+      document.getElementById('cve-desc').value = lines.join('\n');
     } catch(e) {
       alert('CVE lookup failed: ' + e.message);
     }
-    btn.textContent = '↗ Fetch CVE';
+
+    btn.textContent = '\u2197 Fetch CVE';
     btn.disabled = false;
   }
 
@@ -674,6 +911,138 @@
     }
   }
 
+  function switchEngine(engine) {
+    currentEngine = engine;
+    ['gemini', 'groq', 'copilot'].forEach(e => {
+      document.getElementById('engine-tab-' + e).classList.toggle('active', e === engine);
+      document.getElementById('engine-' + e).classList.toggle('active', e === engine);
+    });
+    document.getElementById('btn-text').textContent = engine === 'copilot'
+      ? '\u2197 Copy Prompt & Open Copilot'
+      : '\u25B2 Analyze Vulnerability';
+    document.getElementById('results').innerHTML = '';
+  }
+
+  // Sends the current input to whichever engine is selected.
+  function runTriage() {
+    return currentEngine === 'copilot' ? openInCopilot() : analyze();
+  }
+
+  // Copilot has no browser-callable API, so this is a hand-off rather than an
+  // integration: we build the same prompt Gemini gets, put it on the clipboard,
+  // and open Copilot in a new tab for the user to paste into.
+  function buildCopilotPrompt() {
+    return 'Act as an application security analyst and triage this vulnerability.\n\n' +
+      buildPrompt() +
+      '\n\nProvide:\n' +
+      '- Severity justification (with an estimated CVSS score)\n' +
+      '- Exploitability analysis and a realistic attack scenario\n' +
+      '- Business impact in plain English\n' +
+      '- Recommended mitigations as concrete, ordered steps\n' +
+      '- Patch urgency and a suggested remediation window';
+  }
+
+  async function copyText(text) {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (e) { /* fall through to the legacy path below */ }
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '-1000px';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  const COPILOT_URL = 'https://copilot.microsoft.com/';
+
+  function pasteShortcut() {
+    const plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
+    return /mac/i.test(plat) ? 'Cmd+V' : 'Ctrl+V';
+  }
+
+  // Opens Copilot with the prompt as a seed. Copilot currently discards ?q=,
+  // but including it costs nothing and pre-fills for anyone it does work for.
+  function openCopilotTab(prompt) {
+    const seed = prompt.length > 1200 ? prompt.slice(0, 1200) : prompt;
+    return window.open(COPILOT_URL + '?q=' + encodeURIComponent(seed), '_blank', 'noopener');
+  }
+
+  function reopenCopilot() {
+    openCopilotTab(buildCopilotPrompt());
+  }
+
+  async function recopyPrompt() {
+    const ok = await copyText(buildCopilotPrompt());
+    const el = document.getElementById('recopy-btn');
+    if (el) {
+      el.textContent = ok ? '\u2713 Copied' : '\u2715 Copy failed';
+      setTimeout(() => { el.textContent = '\u29C9 Copy prompt again'; }, 1800);
+    }
+  }
+
+  async function openInCopilot() {
+    if (!buildPrompt().trim()) { alert('Please fill in the vulnerability details first.'); return; }
+
+    const prompt = buildCopilotPrompt();
+    const copied = await copyText(prompt);
+
+    // Only send the user to Copilot if they actually have the prompt to paste.
+    const win = copied ? openCopilotTab(prompt) : null;
+    const blocked = copied && !win;
+
+    let title, steps;
+    if (!copied) {
+      title = 'Copy the prompt manually';
+      steps = ['This browser blocked clipboard access, so nothing was copied.',
+               'Open the prompt below, select all of it, and copy it yourself.',
+               'Then click <strong>Open Copilot</strong> and paste it in.'];
+    } else if (blocked) {
+      title = 'Prompt copied \u2014 allow the popup to continue';
+      steps = ['The prompt is on your clipboard.',
+               'Your browser blocked the new tab. Click <strong>Open Copilot</strong> below.',
+               'Paste with <kbd>' + pasteShortcut() + '</kbd> and press Enter.'];
+    } else {
+      title = 'Prompt copied \u2014 Copilot is open in a new tab';
+      steps = ['Switch to the Copilot tab.',
+               'Paste with <kbd>' + pasteShortcut() + '</kbd>.',
+               'Press Enter \u2014 your triage report appears there.'];
+    }
+
+    document.getElementById('results').innerHTML =
+      '<div class="handoff">' +
+        '<div class="handoff-head">' +
+          '<div class="handoff-check' + (copied && !blocked ? '' : ' warn') + '">' +
+            (copied && !blocked ? '&#10003;' : '!') + '</div>' +
+          '<div class="handoff-title">' + title + '</div>' +
+        '</div>' +
+        '<div class="handoff-body">' +
+          '<ol class="handoff-steps">' + steps.map(t => '<li>' + t + '</li>').join('') + '</ol>' +
+          '<div class="handoff-actions">' +
+            '<button onclick="reopenCopilot()">&#8599; Open Copilot</button>' +
+            '<button id="recopy-btn" onclick="recopyPrompt()">&#10697; Copy prompt again</button>' +
+          '</div>' +
+          '<details' + (copied ? '' : ' open') + '>' +
+            '<summary>View the prompt VulnTriage built</summary>' +
+            '<textarea readonly>' + escHtml(prompt) + '</textarea>' +
+          '</details>' +
+        '</div>' +
+      '</div>';
+
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   function setLoading(loading) {
     const btn = document.getElementById('analyze-btn');
     const spinner = document.getElementById('spinner');
@@ -681,6 +1050,7 @@
     btn.disabled = loading;
     spinner.style.display = loading ? 'block' : 'none';
     btnText.textContent = loading ? 'Analyzing...' : '▲ Analyze Vulnerability';
+    if (!loading && currentEngine === 'copilot') btnText.textContent = '↗ Copy Prompt & Open Copilot';
   }
 
   function renderResults(json) {
@@ -780,8 +1150,8 @@
   }
 
   async function analyze() {
-    const apiKey = getApiKey();
-    if (!apiKey) return;
+    const cfg = getEngineConfig();
+    if (!cfg) return;
 
     const prompt = buildPrompt();
     if (!prompt.trim()) { alert('Please fill in the vulnerability details.'); return; }
@@ -811,7 +1181,7 @@ Given a vulnerability description, scanner finding, or security issue, respond O
 Be direct, practical, and opinionated. Prioritize actionability over comprehensiveness.`;
 
     try {
-      let text = await callAI(apiKey, systemPrompt, prompt, 4000);
+      let text = await callAI(cfg, systemPrompt, prompt, 4000);
       text = (text || '{}').replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
       const json = JSON.parse(text);
       document.getElementById('results').innerHTML = renderResults(json);
